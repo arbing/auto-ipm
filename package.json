@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "build": "bun build src/main.ts --compile --outfile=dist/auto-ipm",
-    "start": "bun run src/main.ts"
+    "start": "bun run src/main.ts",
+    "dev": "bun run start"
   },
   "devDependencies": {
     "@types/bun": "latest"
@@ -13,6 +14,7 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
-    "tencentcloud-sdk-nodejs-vpc": "^4.1.179"
+    "tencentcloud-sdk-nodejs-vpc": "^4.1.179",
+    "yargs": "^18.0.0"
   }
 }

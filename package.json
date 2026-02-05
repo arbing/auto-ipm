@@ -2,6 +2,10 @@
   "name": "auto-ipm",
   "module": "src/main.ts",
   "type": "module",
+  "scripts": {
+    "build": "bun build src/main.ts --compile --outfile=dist/auto-ipm",
+    "start": "bun run src/main.ts"
+  },
   "devDependencies": {
     "@types/bun": "latest"
   },

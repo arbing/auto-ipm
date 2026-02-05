@@ -378,7 +378,7 @@ async function main(): Promise<void> {
           "安装定时任务",
           (yargs) => {
             return yargs.positional("schedule", {
-              describe: 'Cron 表达式，例如 "0 9 * * *"',
+              describe: 'Cron 表达式，格式: "分钟 小时 日 月 星期"，例如 "30 9 * * *" 表示每天9:30',
               type: "string",
               demandOption: true,
             });

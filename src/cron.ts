@@ -2,8 +2,6 @@ import { execSync } from "child_process";
 import path from "path";
 import { info as logInfo, error as logError } from "./logger";
 
-const SCRIPT_PATH = path.resolve(process.cwd(), "auto-ipm");
-
 export interface CronJob {
   schedule: string;
   command: string;
@@ -12,11 +10,11 @@ export interface CronJob {
 export function listCronJobs(): CronJob[] {
   try {
     const output = execSync("crontab -l", { encoding: "utf8" });
-    const lines = output.split("\n").filter((line) => line.trim());
-
+    const lines = output.split("\n").filter(line => line.trim());
+    
     return lines
-      .filter((line) => line.includes("auto-ipm"))
-      .map((line) => {
+      .filter(line => line.includes("auto-ipm"))
+      .map(line => {
         const parts = line.trim().split(/\s+/);
         const schedule = parts.slice(0, 5).join(" ");
         const command = parts.slice(5).join(" ");
@@ -28,12 +26,23 @@ export function listCronJobs(): CronJob[] {
 }
 
 export function addCronJob(schedule: string): void {
-  const jobs = listCronJobs();
-  const newEntry = `${schedule} ${SCRIPT_PATH}`;
+  const cronParts = schedule.trim().split(/\s+/);
+  if (cronParts.length !== 5) {
+    throw new Error("无效的 cron 表达式，必须包含 5 个字段");
+  }
 
-  // 检查是否已存在完全相同的条目
+  const jobs = listCronJobs();
+  
+  // 获取当前可执行文件的绝对路径
+  const currentExecutablePath = process.execPath;
+  const workDir = path.dirname(currentExecutablePath);
+  
+  // 构建带 cd 命令的完整命令
+  const fullCommand = `cd ${workDir} && ./${path.basename(currentExecutablePath)}`;
+  const newEntry = `${schedule} ${fullCommand}`;
+
   const existingJob = jobs.find(
-    (job) => job.schedule === schedule && job.command.includes("auto-ipm"),
+    job => job.schedule === schedule && job.command.includes("auto-ipm")
   );
 
   if (existingJob) {
@@ -41,13 +50,22 @@ export function addCronJob(schedule: string): void {
     return;
   }
 
-  // 将新条目添加到 crontab
   try {
-    const currentCrontab = execSync("crontab -l 2>/dev/null || echo ''", {
-      encoding: "utf8",
-    });
-    const newCrontab = currentCrontab.trim() + "\n" + newEntry + "\n";
+    // 获取现有的非 auto-ipm 条目
+    let existingLines = [];
+    try {
+      const currentCrontab = execSync("crontab -l", { encoding: "utf8" });
+      existingLines = currentCrontab
+        .split("\n")
+        .filter(line => line.trim() && !line.includes("auto-ipm"));
+    } catch {
+      // 没有现有 crontab
+    }
 
+    // 添加新条目
+    existingLines.push(newEntry);
+    const newCrontab = existingLines.join("\n") + "\n";
+    
     execSync(`echo "${newCrontab}" | crontab -`, { encoding: "utf8" });
     logInfo(`定时任务已安装: ${schedule}`);
   } catch (error) {
@@ -64,11 +82,26 @@ export function removeCronJobs(): void {
     return;
   }
 
-  // 移除所有 auto-ipm 相关的 cron 条目
   try {
-    execSync("crontab -l | grep -v 'auto-ipm' | crontab -", {
-      encoding: "utf8",
-    });
+    // 获取所有非 auto-ipm 的行
+    let nonAutoIpmLines = [];
+    try {
+      const currentCrontab = execSync("crontab -l", { encoding: "utf8" });
+      nonAutoIpmLines = currentCrontab
+        .split("\n")
+        .filter(line => line.trim() && !line.includes("auto-ipm"));
+    } catch {
+      // 没有现有 crontab
+    }
+
+    if (nonAutoIpmLines.length > 0) {
+      const newCrontab = nonAutoIpmLines.join("\n") + "\n";
+      execSync(`echo "${newCrontab}" | crontab -`, { encoding: "utf8" });
+    } else {
+      // 如果没有剩余的行，清除整个 crontab
+      execSync("crontab -r", { encoding: "utf8" });
+    }
+    
     logInfo("定时任务已卸载");
   } catch (error) {
     logError(`卸载定时任务失败: ${error}`);
@@ -82,7 +115,7 @@ export function displayCronJobs(): void {
   if (jobs.length === 0) {
     logInfo("没有找到定时任务");
   } else {
-    jobs.forEach((job) => {
+    jobs.forEach(job => {
       logInfo(`${job.schedule} ${job.command}`);
     });
   }

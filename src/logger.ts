@@ -12,15 +12,21 @@ const INFO_LOG = path.join(LOG_DIR, "info.log");
 const ERROR_LOG = path.join(LOG_DIR, "error.log");
 
 export function info(message: string): void {
+  // 控制台输出（不包含时间戳）
+  process.stdout.write(message + "\n");
+  
+  // 文件输出（包含时间戳）
   const timestamp = new Date().toISOString();
   const formatted = `[${timestamp}] ${message}\n`;
-  process.stdout.write(formatted);
   fs.appendFileSync(INFO_LOG, formatted);
 }
 
 export function error(message: string): void {
+  // 控制台输出（不包含时间戳）
+  process.stderr.write(message + "\n");
+  
+  // 文件输出（包含时间戳）
   const timestamp = new Date().toISOString();
   const formatted = `[${timestamp}] ${message}\n`;
-  process.stderr.write(formatted);
   fs.appendFileSync(ERROR_LOG, formatted);
 }

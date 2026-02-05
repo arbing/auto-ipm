@@ -52,7 +52,7 @@ FEISHU_WEBHOOK_URL=飞书Webhook地址
 ./auto-ipm
 
 # 安装定时任务（每天9点30执行一次）
-./auto-ipm cron add "0 30 9 * *"
+./auto-ipm cron add "30 9 * * *"
 
 # 卸载定时任务
 ./auto-ipm cron remove
